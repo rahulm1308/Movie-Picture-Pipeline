@@ -9,7 +9,7 @@ on:
 jobs:
   Linting:
     runs-on: ubuntu-latest
-    environment: Devlopmnet Environment
+    environment: Development Environment
 
     steps:
     - name: Check the Repository
@@ -50,8 +50,6 @@ jobs:
     - name: Test
       run: cd starter/frontend && npm run test
 
-
-
   Build:
     needs: [Linting, Test]
     runs-on: ubuntu-latest
@@ -72,15 +70,11 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
         aws-region: us-east-1
   
-
-    - name: Login to Amazon 
-      id: login-ecr
+    - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
-
-
 
     - name: Build and Push Docker Image
       working-directory: starter/frontend
@@ -88,14 +82,11 @@ jobs:
         IMAGE_TAG: latest
         REPO_NAME: frontend
       run: |
-        docker build --build-arg=REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
+        docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
         docker push 669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-    
 
     - name: Configure Kubeconfig
-      run:
-       aws eks update-kubeconfig --name udacity-project4 --region us-east-1
-
+      run: aws eks update-kubeconfig --name cluster --region us-east-1
 
     - name: Deploy Docker Image to Amazon EKS
       working-directory: starter/frontend/k8s
@@ -103,5 +94,5 @@ jobs:
         IMAGE_TAG: latest
         REPO_NAME: frontend
       run: |
-          kustomize edit set image frontend=669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-          kustomize build | kubectl apply -f -
+        kustomize edit set image frontend=669172573612.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+        kustomize build | kubectl apply -f -
