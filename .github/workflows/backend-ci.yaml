@@ -8,10 +8,39 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force; 
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+      - name: Install jq and curl
+        run: |
+          choco install jq -y
+          choco install curl -y
+
+      - name: Install AWS CLI
+        run: choco install awscli -y
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          aws eks update-kubeconfig --name your-cluster-name --region us-east-1
+
+      - name: Run init.sh
+        run: bash ./init.sh
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -27,16 +56,45 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run lint
         run: npm run lint
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force; 
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+      - name: Install jq and curl
+        run: |
+          choco install jq -y
+          choco install curl -y
+
+      - name: Install AWS CLI
+        run: choco install awscli -y
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          aws eks update-kubeconfig --name your-cluster-name --region us-east-1
+
+      - name: Run init.sh
+        run: bash ./init.sh
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -52,17 +110,46 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run tests
         run: npm run test
 
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: [lint, test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Install Chocolatey
+        run: |
+          Set-ExecutionPolicy Bypass -Scope Process -Force; 
+          [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+          iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+      - name: Install jq and curl
+        run: |
+          choco install jq -y
+          choco install curl -y
+
+      - name: Install AWS CLI
+        run: choco install awscli -y
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          aws eks update-kubeconfig --name your-cluster-name --region us-east-1
+
+      - name: Run init.sh
+        run: bash ./init.sh
 
       - name: Setup Node.js
         uses: actions/setup-node@v3
@@ -78,7 +165,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build application
         run: docker build -t my-backend-app .
