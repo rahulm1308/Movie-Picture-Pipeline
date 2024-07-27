@@ -1,7 +1,9 @@
 # Movie Picture Pipeline
 
 
-Working URL for movie list -> http://a2513c60fc82a46ce813b38fb108765e-526285576.us-east-1.elb.amazonaws.com/movies
+URL for Frontend -> a2513c60fc82a46ce813b38fb108765e-526285576.us-east-1.elb.amazonaws.com
+
+URL for Backend -> a7dd5ea0d13124b78916aa571cbe3df0-687626449.us-east-1.elb.amazonaws.com
 
 Github Link to Repository -> https://github.com/rahulm1308/Movie-Picture-Pipeline
 
