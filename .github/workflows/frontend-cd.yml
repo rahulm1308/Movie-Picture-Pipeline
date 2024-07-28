@@ -9,90 +9,111 @@ on:
 jobs:
   Linting:
     runs-on: ubuntu-latest
-    environment: Development Environment
-
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Use Node.js 18
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: starter/frontend/package-lock.json
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
 
-    - name: Install Dependencies
-      working-directory: starter/frontend
-      run: npm ci
+      - name: Install Dependencies
+        working-directory: starter/frontend
+        run: npm ci
 
-    - name: Checkout Run Lint
-      run: cd starter/frontend && npm run lint
+      - name: Run Lint
+        run: cd starter/frontend && npm run lint
 
   Test:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Use Node.js 18
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: starter/frontend/package-lock.json
-        
-    - name: Install Dependencies
-      working-directory: starter/frontend
-      run: npm ci
-  
-    - name: Test
-      run: cd starter/frontend && npm run test
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: starter/frontend
+        run: npm ci
+
+      - name: Run Tests
+        run: cd starter/frontend && npm run test
 
   Build:
     needs: [Linting, Test]
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
-    
-    - name: Use Node.js 18
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
-        cache: 'npm'
-        cache-dependency-path: starter/frontend/package-lock.json
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-        aws-region: us-east-1
-  
-    - name: Login to Amazon ECR
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
 
-    - name: Build and Push Docker Image
-      working-directory: starter/frontend
-      env:
-        IMAGE_TAG: latest
-        REPO_NAME: frontend
-      run: |
-        docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag 427848260902.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG .
-        docker push 427848260902.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
+      - name: Build Docker Image
+        run: |
+          cd starter/frontend
+          docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
 
-    - name: Configure Kubeconfig
-      run: aws eks update-kubeconfig --name cluster --region us-east-1
+  Push_to_ECR:
+    needs: [Build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Deploy Docker Image to Amazon EKS
-      working-directory: starter/frontend/k8s
-      env:
-        IMAGE_TAG: latest
-        REPO_NAME: frontend
-      run: |
-        kustomize edit set image frontend=427848260902.dkr.ecr.us-east-1.amazonaws.com/$REPO_NAME:$IMAGE_TAG
-        kustomize build | kubectl apply -f -
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: starter/frontend/package-lock.json
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry: 427848260902.dkr.ecr.us-east-1.amazonaws.com
+          access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Push Docker Image to Amazon ECR
+        run: |
+          docker tag frontend-app:latest 427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
+          docker push 427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
+
+  Deploy:
+    needs: [Push_to_ECR]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the Repository
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure AWS credentials for EKS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{secrets.AWS_SESSION_TOKEN}}
+          aws-region: us-east-1
+
+      - name: Update Kubernetes deployment
+        run: |
+          kubectl set image deployment/frontend frontend=427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
+          kubectl rollout status deployment/frontend
