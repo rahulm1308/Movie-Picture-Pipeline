@@ -9,61 +9,64 @@ on:
 jobs:
   Linting:
     runs-on: ubuntu-latest
-    environment: Devlopmnet Environment
+    environment: Development Environment
 
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-    - name: Install Dependencies
-      working-directory: starter/backend 
-      run:  |
-        python -m pip install --upgrade pip
-        pip install pipenv
-        pip install flake8
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm ci
 
-    - name: Checkout Run Lint
-      run: cd starter/backend && pipenv run lint
+      - name: Run Lint
+        run: cd backend && npm run lint
 
   Test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Use Python 3
-      uses:  actions/setup-python@v4
-      with:
-        python-version: "3.10"
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-    - name: Install Dependencies
-      working-directory: starter/backend 
-      run:  |
-        python -m pip install --upgrade pip
-        pip install pipenv
-        pip install flake8
+      - name: Install Dependencies
+        working-directory: backend
+        run: npm ci
 
-    - name: Test
-      run: cd starter/backend && pipenv install pytest && pipenv run test
+      - name: Run Tests
+        run: cd backend && npm run test
 
-      
   Build:
     needs: [Linting, Test]
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Check the Repository
-      uses: actions/checkout@v3
+      - name: Check the Repository
+        uses: actions/checkout@v3
 
-    - name: Build Docker Image
-      run: |
-        cd starter/backend
-        docker build --tag mp-backend:latest .
+      - name: Use Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
 
-
+      - name: Build and Run Docker Image
+        run: |
+          cd backend
+          docker build --tag=backend-app:latest .
+          docker run --name backend-app -d backend-app
