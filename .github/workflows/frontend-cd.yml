@@ -13,19 +13,23 @@ jobs:
       - name: Check the Repository
         uses: actions/checkout@v3
 
+      - name: Verify Cache Path
+        run: ls -la starter/frontend/
+
       - name: Use Node.js 18
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: starter/frontend/package-lock.json
+          cache-dependency-path: 'starter/frontend/package-lock.json'
 
       - name: Install Dependencies
         working-directory: starter/frontend
         run: npm ci
 
       - name: Run Lint
-        run: cd starter/frontend && npm run lint
+        working-directory: starter/frontend
+        run: npm run lint
 
   Test:
     runs-on: ubuntu-latest
@@ -38,14 +42,15 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: starter/frontend/package-lock.json
+          cache-dependency-path: 'starter/frontend/package-lock.json'
 
       - name: Install Dependencies
         working-directory: starter/frontend
         run: npm ci
 
       - name: Run Tests
-        run: cd starter/frontend && npm run test
+        working-directory: starter/frontend
+        run: npm run test
 
   Build:
     needs: [Linting, Test]
@@ -59,7 +64,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: starter/frontend/package-lock.json
+          cache-dependency-path: 'starter/frontend/package-lock.json'
 
       - name: Build Docker Image
         working-directory: starter/frontend
@@ -96,4 +101,24 @@ jobs:
   Deploy:
     needs: [Push_to_ECR]
     runs-on: ubuntu-latest
-    step
+    steps:
+      - name: Check the Repository
+        uses: actions/checkout@v3
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure AWS credentials for EKS
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Update Kubernetes deployment
+        run: |
+          kubectl set image deployment/frontend frontend=427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
+          kubectl rollout status deployment/frontend
