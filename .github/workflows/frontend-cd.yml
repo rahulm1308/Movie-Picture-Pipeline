@@ -63,7 +63,9 @@ jobs:
 
       - name: Build Docker Image
         working-directory: starter/frontend
-        run: docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
+        run: |
+          docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
+          docker images
 
   Push_to_ECR:
     needs: [Build]
@@ -84,7 +86,6 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
-          registry: 427848260902.dkr.ecr.us-east-1.amazonaws.com
           region: us-east-1
 
       - name: Push Docker Image to Amazon ECR
@@ -95,24 +96,4 @@ jobs:
   Deploy:
     needs: [Push_to_ECR]
     runs-on: ubuntu-latest
-    steps:
-      - name: Check the Repository
-        uses: actions/checkout@v3
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Configure AWS credentials for EKS
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-
-      - name: Update Kubernetes deployment
-        run: |
-          kubectl set image deployment/frontend frontend=427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
-          kubectl rollout status deployment/frontend
+    step
