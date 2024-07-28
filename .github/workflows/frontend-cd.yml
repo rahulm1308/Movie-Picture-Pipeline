@@ -62,9 +62,8 @@ jobs:
           cache-dependency-path: starter/frontend/package-lock.json
 
       - name: Build Docker Image
-        run: |
-          cd starter/frontend
-          docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
+        working-directory: starter/frontend
+        run: docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
 
   Push_to_ECR:
     needs: [Build]
@@ -85,6 +84,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
         with:
+          registry: 427848260902.dkr.ecr.us-east-1.amazonaws.com
           region: us-east-1
 
       - name: Push Docker Image to Amazon ECR
