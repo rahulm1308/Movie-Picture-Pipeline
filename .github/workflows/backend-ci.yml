@@ -20,10 +20,10 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: starter/backend/package-lock.json
 
       - name: Install Dependencies
-        working-directory: backend
+        working-directory: starter/backend
         run: npm ci
 
       - name: Run Lint
@@ -41,10 +41,10 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: starter/backend/package-lock.json
 
       - name: Install Dependencies
-        working-directory: backend
+        working-directory: starter/backend
         run: npm ci
 
       - name: Run Tests
@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: starter/backend/package-lock.json
 
       - name: Build and Run Docker Image
         run: |

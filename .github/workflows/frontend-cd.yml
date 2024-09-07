@@ -70,7 +70,9 @@ jobs:
         working-directory: starter/frontend
         run: |
           docker build --build-arg REACT_APP_MOVIE_API_URL=http://localhost:5000 --tag=frontend-app:latest .
-          docker images
+          echo "Docker image built:"
+          echo "Listing images with frontend-app:"
+          docker images | grep frontend-app
 
   Push_to_ECR:
     needs: [Build]
