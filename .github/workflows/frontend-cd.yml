@@ -74,6 +74,11 @@ jobs:
           echo "Listing images with frontend-app:"
           docker images | grep frontend-app
 
+      - name: Tag Docker Image
+        working-directory: starter/frontend
+        run: |
+          docker tag frontend-app:latest 427848260902.dkr.ecr.us-east-1.amazonaws.com/frontend-app:latest
+
   Push_to_ECR:
     needs: [Build]
     runs-on: ubuntu-latest
