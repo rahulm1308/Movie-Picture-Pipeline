@@ -1,11 +1,3 @@
-name: Backend Continuous Integration
-
-on:
-  workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-
 jobs:
   Linting:
     runs-on: ubuntu-latest
@@ -27,7 +19,8 @@ jobs:
         run: npm ci
 
       - name: Run Lint
-        run: cd backend && npm run lint
+        working-directory: starter/backend
+        run: npm run lint
 
   Test:
     runs-on: ubuntu-latest
@@ -48,7 +41,8 @@ jobs:
         run: npm ci
 
       - name: Run Tests
-        run: cd backend && npm run test
+        working-directory: starter/backend
+        run: npm run test
 
   Build:
     needs: [Linting, Test]
@@ -66,7 +60,7 @@ jobs:
           cache-dependency-path: starter/backend/package-lock.json
 
       - name: Build and Run Docker Image
+        working-directory: starter/backend
         run: |
-          cd backend
           docker build --tag=backend-app:latest .
           docker run --name backend-app -d backend-app
